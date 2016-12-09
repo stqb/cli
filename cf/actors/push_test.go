@@ -78,7 +78,7 @@ var _ = Describe("Push Actor", func() {
 			})
 
 			It("returns an error if we cannot reach the cc", func() {
-				_, _, err := actor.GatherFiles(allFiles, appDir, tmpDir)
+				_, _, err := actor.GatherFiles(allFiles, appDir, tmpDir, false)
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(Equal(expectedErr))
 			})
@@ -93,7 +93,7 @@ var _ = Describe("Push Actor", func() {
 			})
 
 			It("returns an error", func() {
-				_, _, err := actor.GatherFiles(allFiles, appDir, tmpDir)
+				_, _, err := actor.GatherFiles(allFiles, appDir, tmpDir, false)
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(Equal(expectedErr))
 			})
@@ -107,7 +107,7 @@ var _ = Describe("Push Actor", func() {
 			})
 
 			It("copies the .cfignore file to the upload directory", func() {
-				_, _, err := actor.GatherFiles(allFiles, appDir, tmpDir)
+				_, _, err := actor.GatherFiles(allFiles, appDir, tmpDir, false)
 				Expect(err).NotTo(HaveOccurred())
 
 				_, err = os.Stat(filepath.Join(tmpDir, ".cfignore"))
@@ -125,7 +125,7 @@ var _ = Describe("Push Actor", func() {
 
 			expectedFileMode := fmt.Sprintf("%#o", info.Mode())
 
-			actualFiles, _, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir)
+			actualFiles, _, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir, false)
 			Expect(err).NotTo(HaveOccurred())
 
 			expectedFiles := []resources.AppFileResource{
@@ -148,7 +148,7 @@ var _ = Describe("Push Actor", func() {
 
 			expectedFileMode := fmt.Sprintf("%#o", info.Mode()|0700)
 
-			actualFiles, _, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir)
+			actualFiles, _, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir, false)
 			Expect(err).NotTo(HaveOccurred())
 
 			expectedFiles := []resources.AppFileResource{
@@ -167,7 +167,7 @@ var _ = Describe("Push Actor", func() {
 			})
 
 			It("returns true for hasFileToUpload", func() {
-				_, hasFileToUpload, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir)
+				_, hasFileToUpload, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir, false)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(hasFileToUpload).To(BeTrue())
 			})
@@ -182,7 +182,7 @@ var _ = Describe("Push Actor", func() {
 					{Path: "example-app/ignore-me"},
 					{Path: "example-app/manifest.yml"},
 				}
-				_, _, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir)
+				_, _, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir, false)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(appFiles.CopyFilesCallCount()).To(Equal(1))
@@ -205,7 +205,7 @@ var _ = Describe("Push Actor", func() {
 			})
 
 			It("returns true for hasFileToUpload", func() {
-				_, hasFileToUpload, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir)
+				_, hasFileToUpload, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir, false)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(hasFileToUpload).To(BeTrue())
 			})
@@ -219,7 +219,7 @@ var _ = Describe("Push Actor", func() {
 					{Path: "example-app/Gemfile.lock"},
 					{Path: "example-app/ignore-me"},
 				}
-				_, _, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir)
+				_, _, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir, false)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(appFiles.CopyFilesCallCount()).To(Equal(1))
@@ -246,13 +246,13 @@ var _ = Describe("Push Actor", func() {
 			})
 
 			It("returns false for hasFileToUpload", func() {
-				_, hasFileToUpload, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir)
+				_, hasFileToUpload, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir, false)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(hasFileToUpload).To(BeFalse())
 			})
 
 			It("copies nothing to the upload dir", func() {
-				_, _, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir)
+				_, _, err := actor.GatherFiles(allFiles, fixturesDir, tmpDir, false)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(appFiles.CopyFilesCallCount()).To(Equal(1))

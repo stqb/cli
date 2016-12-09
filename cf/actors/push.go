@@ -22,7 +22,7 @@ const windowsPathPrefix = `\\?\`
 type PushActor interface {
 	UploadApp(appGUID string, zipFile *os.File, presentFiles []resources.AppFileResource) error
 	ProcessPath(dirOrZipFile string, f func(string) error) error
-	GatherFiles(localFiles []models.AppFileFields, appDir string, uploadDir string) ([]resources.AppFileResource, bool, error)
+	GatherFiles(localFiles []models.AppFileFields, appDir string, uploadDir string, skipResourceMatching bool) ([]resources.AppFileResource, bool, error)
 	ValidateAppParams(apps []models.AppParams) []error
 	MapManifestRoute(routeName string, app models.Application, appParamsFromContext models.AppParams) error
 }
@@ -105,7 +105,7 @@ func (actor PushActorImpl) ProcessPath(dirOrZipFile string, f func(string) error
 	return nil
 }
 
-func (actor PushActorImpl) GatherFiles(localFiles []models.AppFileFields, appDir string, uploadDir string) ([]resources.AppFileResource, bool, error) {
+func (actor PushActorImpl) GatherFiles(localFiles []models.AppFileFields, appDir string, uploadDir string, skipResourceMatching bool) ([]resources.AppFileResource, bool, error) {
 	appFileResource := []resources.AppFileResource{}
 	for _, file := range localFiles {
 		appFileResource = append(appFileResource, resources.AppFileResource{
@@ -115,23 +115,31 @@ func (actor PushActorImpl) GatherFiles(localFiles []models.AppFileFields, appDir
 		})
 	}
 
-	remoteFiles, err := actor.appBitsRepo.GetApplicationFiles(appFileResource)
-	if err != nil {
-		return []resources.AppFileResource{}, false, err
-	}
+	var filesToUpload []models.AppFileFields
+	var remoteFiles []resources.AppFileResource
+	if skipResourceMatching {
+		filesToUpload = make([]models.AppFileFields, len(localFiles), len(localFiles))
+		copy(filesToUpload, localFiles)
+	} else {
+		var err error
+		remoteFiles, err = actor.appBitsRepo.GetApplicationFiles(appFileResource)
+		if err != nil {
+			return []resources.AppFileResource{}, false, err
+		}
 
-	filesToUpload := make([]models.AppFileFields, len(localFiles), len(localFiles))
-	copy(filesToUpload, localFiles)
+		filesToUpload = make([]models.AppFileFields, len(localFiles), len(localFiles))
+		copy(filesToUpload, localFiles)
 
-	for _, remoteFile := range remoteFiles {
-		for i, fileToUpload := range filesToUpload {
-			if remoteFile.Path == fileToUpload.Path {
-				filesToUpload = append(filesToUpload[:i], filesToUpload[i+1:]...)
+		for _, remoteFile := range remoteFiles {
+			for i, fileToUpload := range filesToUpload {
+				if remoteFile.Path == fileToUpload.Path {
+					filesToUpload = append(filesToUpload[:i], filesToUpload[i+1:]...)
+				}
 			}
 		}
 	}
 
-	err = actor.appfiles.CopyFiles(filesToUpload, appDir, uploadDir)
+	err := actor.appfiles.CopyFiles(filesToUpload, appDir, uploadDir)
 	if err != nil {
 		return []resources.AppFileResource{}, false, err
 	}

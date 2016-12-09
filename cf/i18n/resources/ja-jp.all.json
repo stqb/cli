@@ -5848,7 +5848,7 @@
     "translation": ""
   },
   {
-    "id": "[--no-hostname] [--no-manifest] [--no-route] [--no-start] [--random-route]\n",
+    "id": "[--no-hostname] [--no-manifest] [--no-route] [--no-start] [--random-route] [--skip-resource-matching]\n",
     "translation": ""
   },
   {
@@ -6286,6 +6286,14 @@
   {
     "id": "since",
     "translation": "開始日時"
+  },
+  {
+    "id": "skip the resource matching during a push. This is a custom feature of this specific binary, it was added in https://www.pivotaltracker.com/story/show/135794725",
+    "translation": ""
+  },
+  {
+    "id": "skip-resource-matching",
+    "translation": ""
   },
   {
     "id": "space",

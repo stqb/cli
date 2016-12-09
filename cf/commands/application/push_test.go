@@ -988,7 +988,7 @@ var _ = Describe("Push Command", func() {
 					It("includes the app files in dir", func() {
 						Expect(executeErr).NotTo(HaveOccurred())
 
-						actualLocalFiles, _, _ := actor.GatherFilesArgsForCall(0)
+						actualLocalFiles, _, _, _ := actor.GatherFilesArgsForCall(0)
 						Expect(actualLocalFiles).To(Equal(expectedLocalFiles))
 					})
 				})
@@ -1027,7 +1027,7 @@ var _ = Describe("Push Command", func() {
 					It("pushes the contents of the app directory or zip file specified", func() {
 						Expect(executeErr).NotTo(HaveOccurred())
 
-						_, appDir, _ := actor.GatherFilesArgsForCall(0)
+						_, appDir, _, _ := actor.GatherFilesArgsForCall(0)
 						Expect(appDir).To(Equal("../some/path-to/an-app/file.zip"))
 					})
 				})
@@ -1063,7 +1063,7 @@ var _ = Describe("Push Command", func() {
 						Expect(executeErr).NotTo(HaveOccurred())
 
 						dir, _ := os.Getwd()
-						_, appDir, _ := actor.GatherFilesArgsForCall(0)
+						_, appDir, _, _ := actor.GatherFilesArgsForCall(0)
 						Expect(appDir).To(Equal(dir))
 					})
 				})

@@ -31,23 +31,24 @@ import (
 )
 
 type Push struct {
-	ui            terminal.UI
-	config        coreconfig.Reader
-	manifestRepo  manifest.Repository
-	appStarter    Starter
-	appStopper    Stopper
-	serviceBinder service.Binder
-	appRepo       applications.Repository
-	domainRepo    api.DomainRepository
-	routeRepo     api.RouteRepository
-	serviceRepo   api.ServiceRepository
-	stackRepo     stacks.StackRepository
-	authRepo      authentication.Repository
-	wordGenerator generator.WordGenerator
-	actor         actors.PushActor
-	routeActor    actors.RouteActor
-	zipper        appfiles.Zipper
-	appfiles      appfiles.AppFiles
+	ui                   terminal.UI
+	config               coreconfig.Reader
+	manifestRepo         manifest.Repository
+	appStarter           Starter
+	appStopper           Stopper
+	serviceBinder        service.Binder
+	appRepo              applications.Repository
+	domainRepo           api.DomainRepository
+	routeRepo            api.RouteRepository
+	serviceRepo          api.ServiceRepository
+	stackRepo            stacks.StackRepository
+	authRepo             authentication.Repository
+	wordGenerator        generator.WordGenerator
+	actor                actors.PushActor
+	routeActor           actors.RouteActor
+	zipper               appfiles.Zipper
+	appfiles             appfiles.AppFiles
+	skipResourceMatching bool
 }
 
 func init() {
@@ -77,6 +78,7 @@ func (cmd *Push) MetaData() commandregistry.CommandMetadata {
 	fs["route-path"] = &flags.StringFlag{Name: "route-path", Usage: T("Path for the route")}
 	// Hidden:true to hide app-ports for release #117189491
 	fs["app-ports"] = &flags.StringFlag{Name: "app-ports", Usage: T("Comma delimited list of ports the application may listen on"), Hidden: true}
+	fs["skip-resource-matching"] = &flags.BoolFlag{Name: "skip-resource-matching", Usage: T("skip the resource matching during a push. This is a custom feature of this specific binary, it was added in https://www.pivotaltracker.com/story/show/135794725"), Hidden: false}
 
 	return commandregistry.CommandMetadata{
 		Name:        "push",
@@ -104,7 +106,7 @@ func (cmd *Push) MetaData() commandregistry.CommandMetadata {
 			"\n   ",
 			// Commented to hide app-ports for release #117189491
 			// fmt.Sprintf("[--app-ports %s] ", T("APP_PORTS")),
-			"[--no-hostname] [--no-manifest] [--no-route] [--no-start] [--random-route]\n",
+			"[--no-hostname] [--no-manifest] [--no-route] [--no-start] [--random-route] [--skip-resource-matching]\n",
 			"\n   ",
 			T("Push multiple apps with a manifest"),
 			":\n   ",
@@ -278,6 +280,8 @@ func (cmd *Push) Execute(c flags.FlagContext) error {
 		if err != nil {
 			return err
 		}
+
+		cmd.skipResourceMatching = c.Bool("skip-resource-matching")
 
 		if c.String("docker-image") == "" {
 			err = cmd.actor.ProcessPath(*appParams.Path, cmd.processPathCallback(*appParams.Path, app))
@@ -813,7 +817,7 @@ func (cmd *Push) uploadApp(appGUID, appDir, appDirOrZipFile string, localFiles [
 		return err
 	}
 
-	remoteFiles, hasFileToUpload, err := cmd.actor.GatherFiles(localFiles, appDir, uploadDir)
+	remoteFiles, hasFileToUpload, err := cmd.actor.GatherFiles(localFiles, appDir, uploadDir, cmd.skipResourceMatching)
 	if err != nil {
 		return err
 	}

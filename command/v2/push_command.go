@@ -28,6 +28,7 @@ type PushCommand struct {
 	RoutePath            string      `long:"route-path" description:"Path for the route"`
 	Stack                string      `short:"s" description:"Stack to use (a stack is a pre-built file system, including an operating system, that can run apps)"`
 	ApplicationStartTime int         `short:"t" description:"Maximum time (in seconds) for CLI to wait for application start, other server side timeouts may apply"`
+	SkipResourceMatching bool        `long:"skip-resource-matching" description:"skip the resource matching during a push. This is a custom feature of this specific binary, it was added in https://www.pivotaltracker.com/story/show/135794725"`
 	usage                interface{} `usage:"Push a single app (with or without a manifest):\n   CF_NAME push APP_NAME [-b BUILDPACK_NAME] [-c COMMAND] [-d DOMAIN] [-f MANIFEST_PATH] [--docker-image DOCKER_IMAGE]\n   [-i NUM_INSTANCES] [-k DISK] [-m MEMORY] [--hostname HOST] [-p PATH] [-s STACK] [-t TIMEOUT] [-u HEALTH_CHECK_TYPE] [--route-path ROUTE_PATH]\n   [--no-hostname] [--no-manifest] [--no-route] [--no-start] [--random-route]\n\n   Push multiple apps with a manifest:\n   cf push [-f MANIFEST_PATH]"`
 	envCFStagingTimeout  interface{} `environmentName:"CF_STAGING_TIMEOUT" environmentDescription:"Max wait time for buildpack staging, in minutes" environmentDefault:"15"`
 	envCFStartupTimeout  interface{} `environmentName:"CF_STARTUP_TIMEOUT" environmentDescription:"Max wait time for app instance startup, in minutes" environmentDefault:"5"`
