@@ -17,6 +17,7 @@ type User struct {
 type newUserRequestBody struct {
 	Username string   `json:"userName"`
 	Password string   `json:"password"`
+	Origin   string   `json:"origin"`
 	Name     userName `json:"name"`
 	Emails   []email  `json:"emails"`
 }
@@ -36,11 +37,13 @@ type newUserResponse struct {
 	ID string `json:"id"`
 }
 
+// TODO: check if empty origins are allowed
 // NewUser creates a new UAA user account with the provided password.
-func (client *Client) NewUser(user string, password string) (User, error) {
+func (client *Client) NewUser(user string, password string, origin string) (User, error) {
 	userRequest := newUserRequestBody{
 		Username: user,
 		Password: password,
+		Origin:   origin,
 		Name: userName{
 			FamilyName: user,
 			GivenName:  user,
