@@ -3,8 +3,10 @@ package configv3
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -134,6 +136,22 @@ func WriteConfig(c *Config) error {
 	if err != nil {
 		return err
 	}
+
+	tmpDir, _ := ioutil.TempDir("", "config-diff")
+
+	oldConfig, _ := ioutil.ReadFile(ConfigFilePath())
+
+	oldFile := filepath.Join(tmpDir, "old")
+	ioutil.WriteFile(oldFile, oldConfig, 0600)
+
+	newFile := filepath.Join(tmpDir, "new")
+	ioutil.WriteFile(newFile, rawConfig, 0600)
+
+	cmd := exec.Command("git", "diff", "--color", oldFile, newFile)
+	output, _ := cmd.Output()
+	fmt.Println(string(output))
+
+	os.RemoveAll(tmpDir)
 
 	return ioutil.WriteFile(ConfigFilePath(), rawConfig, 0600)
 }
