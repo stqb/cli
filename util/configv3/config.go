@@ -3,7 +3,6 @@ package configv3
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -127,6 +126,10 @@ func LoadConfig(flags ...FlagOverride) (*Config, error) {
 // location of .cf directory is written in the same way LoadConfig reads .cf
 // directory.
 func WriteConfig(c *Config) error {
+	f2, _ := os.OpenFile("/tmp/config-dirty", os.O_APPEND|os.O_WRONLY, 0600)
+	f2.WriteString("    config written\n")
+	f2.Close()
+
 	rawConfig, err := json.MarshalIndent(c.ConfigFile, "", "  ")
 	if err != nil {
 		return err
@@ -147,9 +150,11 @@ func WriteConfig(c *Config) error {
 	newFile := filepath.Join(tmpDir, "new")
 	ioutil.WriteFile(newFile, rawConfig, 0600)
 
-	cmd := exec.Command("git", "diff", "--color", oldFile, newFile)
+	cmd := exec.Command("git", "diff", oldFile, newFile)
 	output, _ := cmd.Output()
-	fmt.Println(string(output))
+	f, _ := os.OpenFile("/tmp/config-changes", os.O_APPEND|os.O_WRONLY, 0600)
+	f.Write(output)
+	f.Close()
 
 	os.RemoveAll(tmpDir)
 
@@ -411,8 +416,15 @@ func (config *Config) BinaryBuildDate() string {
 	return version.BinaryBuildDate
 }
 
+func (config Config) MarkDirty() {
+	f, _ := os.OpenFile("/tmp/config-dirty", os.O_APPEND|os.O_WRONLY, 0600)
+	f.WriteString("    config dirty\n")
+	f.Close()
+}
+
 // SetOrganizationInformation sets the currently targeted organization
 func (config *Config) SetOrganizationInformation(guid string, name string) {
+	config.MarkDirty()
 	config.ConfigFile.TargetedOrganization.GUID = guid
 	config.ConfigFile.TargetedOrganization.Name = name
 	config.ConfigFile.TargetedOrganization.QuotaDefinition = QuotaDefinition{}
@@ -420,6 +432,7 @@ func (config *Config) SetOrganizationInformation(guid string, name string) {
 
 // SetSpaceInformation sets the currently targeted space
 func (config *Config) SetSpaceInformation(guid string, name string, allowSSH bool) {
+	config.MarkDirty()
 	config.ConfigFile.TargetedSpace.GUID = guid
 	config.ConfigFile.TargetedSpace.Name = name
 	config.ConfigFile.TargetedSpace.AllowSSH = allowSSH
@@ -428,6 +441,7 @@ func (config *Config) SetSpaceInformation(guid string, name string, allowSSH boo
 // SetTargetInformation sets the currently targeted CC API and related other
 // related API URLs
 func (config *Config) SetTargetInformation(api string, apiVersion string, auth string, loggregator string, doppler string, uaa string, routing string, skipSSLValidation bool) {
+	config.MarkDirty()
 	config.ConfigFile.Target = api
 	config.ConfigFile.APIVersion = apiVersion
 	config.ConfigFile.AuthorizationEndpoint = auth
@@ -443,6 +457,7 @@ func (config *Config) SetTargetInformation(api string, apiVersion string, auth s
 
 // SetTokenInformation sets the current token/user information
 func (config *Config) SetTokenInformation(accessToken string, refreshToken string, sshOAuthClient string) {
+	config.MarkDirty()
 	config.ConfigFile.AccessToken = accessToken
 	config.ConfigFile.RefreshToken = refreshToken
 	config.ConfigFile.SSHOAuthClient = sshOAuthClient
@@ -450,10 +465,12 @@ func (config *Config) SetTokenInformation(accessToken string, refreshToken strin
 
 // SetAccessToken sets the current access token
 func (config *Config) SetAccessToken(accessToken string) {
+	config.MarkDirty()
 	config.ConfigFile.AccessToken = accessToken
 }
 
 // SetRefreshToken sets the current refresh token
 func (config *Config) SetRefreshToken(refreshToken string) {
+	config.MarkDirty()
 	config.ConfigFile.RefreshToken = refreshToken
 }

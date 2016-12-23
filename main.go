@@ -25,6 +25,14 @@ var ErrFailed = errors.New("command failed")
 var ParseErr = errors.New("incorrect type for arg")
 
 func main() {
+	f, _ := os.OpenFile("/tmp/config-changes", os.O_APPEND|os.O_WRONLY, 0600)
+	f.WriteString(strings.Join(os.Args, " ") + "\n")
+	f.Close()
+
+	f2, _ := os.OpenFile("/tmp/config-dirty", os.O_APPEND|os.O_WRONLY, 0600)
+	f2.WriteString(strings.Join(os.Args, " ") + "\n")
+	f2.Close()
+
 	defer panichandler.HandlePanic()
 	parse(os.Args[1:])
 }
