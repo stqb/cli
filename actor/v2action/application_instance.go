@@ -8,7 +8,40 @@ import (
 	"code.cloudfoundry.org/cli/api/cloudcontroller/ccv2"
 )
 
-type ApplicationInstance ccv2.ApplicationInstanceStatus
+type ApplicationInstanceStatusState ccv2.ApplicationInstanceStatusState
+
+type ApplicationInstance struct {
+	// CPU is the instance's CPU utilization percentage.
+	CPU float64
+
+	// Disk is the instance's disk usage in bytes.
+	Disk int
+
+	// DiskQuota is the instance's allowed disk usage in bytes.
+	DiskQuota int
+
+	// ID is the instance ID.
+	ID int
+
+	// Memory is the instance's memory usage in bytes.
+	Memory int
+
+	// MemoryQuota is the instance's allowed memory usage in bytes.
+	MemoryQuota int
+
+	// State is the instance's state.
+	State ApplicationInstanceStatusState
+
+	// Uptime is the number of seconds the instance has been running.
+	Uptime int
+
+	// Details are arbitrary information about the instance.
+	Details string
+
+	// Since is the Unix time stamp that represents the time the instance was
+	// created.
+	Since float64
+}
 
 // ApplicationInstancesNotFoundError is returned when a requested application is not
 // found.
@@ -25,16 +58,48 @@ func (instance ApplicationInstance) StartTime() time.Time {
 }
 
 func (actor Actor) GetApplicationInstancesByApplication(guid string) ([]ApplicationInstance, Warnings, error) {
-	ccAppInstances, warnings, err := actor.CloudControllerClient.GetApplicationInstanceStatusesByApplication(guid)
+	var allWarnings Warnings
+
+	ccAppInstanceStatuses, warnings, err := actor.CloudControllerClient.GetApplicationInstanceStatusesByApplication(guid)
+	allWarnings = append(allWarnings, warnings...)
+
+	if _, ok := err.(cloudcontroller.ResourceNotFoundError); ok {
+		return nil, allWarnings, ApplicationInstancesNotFoundError{ApplicationGUID: guid}
+	} else if err != nil {
+		return nil, allWarnings, err
+	}
+
+	ccAppInstances, warnings, err := actor.CloudControllerClient.GetApplicationInstancesByApplication(guid)
+	allWarnings = append(allWarnings, warnings...)
+
+	if _, ok := err.(cloudcontroller.ResourceNotFoundError); ok {
+		return nil, allWarnings, ApplicationInstancesNotFoundError{ApplicationGUID: guid}
+	} else if err != nil {
+		return nil, allWarnings, err
+	}
 
 	appInstances := []ApplicationInstance{}
 
-	for _, appInstance := range ccAppInstances {
-		appInstances = append(appInstances, ApplicationInstance(appInstance))
-	}
-	if _, ok := err.(cloudcontroller.ResourceNotFoundError); ok {
-		return nil, Warnings(warnings), ApplicationInstancesNotFoundError{ApplicationGUID: guid}
+	for id, appInstance := range ccAppInstanceStatuses {
+		nextInstance := ApplicationInstance{
+			CPU:         appInstance.CPU,
+			Disk:        appInstance.Disk,
+			DiskQuota:   appInstance.DiskQuota,
+			ID:          id,
+			Memory:      appInstance.Memory,
+			MemoryQuota: appInstance.MemoryQuota,
+			State:       ApplicationInstanceStatusState(appInstance.State),
+			Uptime:      appInstance.Uptime,
+		}
+
+		// TODO: should we error if instance in instanceStatuses but not in instances map?
+		if _, ok := ccAppInstances[id]; ok {
+			nextInstance.Details = ccAppInstances[id].Details
+			nextInstance.Since = ccAppInstances[id].Since
+		}
+
+		appInstances = append(appInstances, nextInstance)
 	}
 
-	return appInstances, Warnings(warnings), err
+	return appInstances, allWarnings, err
 }

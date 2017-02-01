@@ -14,11 +14,12 @@ import (
 type ApplicationInstanceStatusState string
 
 const (
-	ApplicationInstanceCrashed  ApplicationInstanceStatusState = "CRASHED"
-	ApplicationInstanceDown                                    = "DOWN"
-	ApplicationInstanceRunning                                 = "RUNNING"
-	ApplicationInstanceStarting                                = "STARTING"
-	ApplicationInstanceUnknown                                 = "UNKNOWN"
+	ApplicationInstanceStatusCrashed  ApplicationInstanceStatusState = "CRASHED"
+	ApplicationInstanceStatusDown                                    = "DOWN"
+	ApplicationInstanceStatusFlapping                                = "FLAPPING"
+	ApplicationInstanceStatusRunning                                 = "RUNNING"
+	ApplicationInstanceStatusStarting                                = "STARTING"
+	ApplicationInstanceStatusUnknown                                 = "UNKNOWN"
 )
 
 // ApplicationInstanceStatus represents a Cloud Controller Application Instance.
@@ -82,7 +83,7 @@ func (instance *ApplicationInstanceStatus) UnmarshalJSON(data []byte) error {
 // GetApplicationInstanceStatusesByApplication returns a list of
 // ApplicationInstance for a given application. Given the state of an
 // application, it might skip some application instances.
-func (client *Client) GetApplicationInstanceStatusesByApplication(guid string) ([]ApplicationInstanceStatus, Warnings, error) {
+func (client *Client) GetApplicationInstanceStatusesByApplication(guid string) (map[int]ApplicationInstanceStatus, Warnings, error) {
 	request, err := client.newHTTPRequest(requestOptions{
 		RequestName: internal.AppInstanceStats,
 		URIParams:   Params{"app_guid": guid},
@@ -101,19 +102,17 @@ func (client *Client) GetApplicationInstanceStatusesByApplication(guid string) (
 		return nil, response.Warnings, err
 	}
 
-	sortedIDs, err := client.sortedInstanceKeys(instances)
-	if err != nil {
-		return nil, response.Warnings, err
+	returnedInstances := map[int]ApplicationInstanceStatus{}
+	for instanceID, instance := range instances {
+		id, err := strconv.Atoi(instanceID)
+		if err != nil {
+			return nil, response.Warnings, err
+		}
+		instance.ID = id
+		returnedInstances[id] = instance
 	}
 
-	var sortedInstances []ApplicationInstanceStatus
-	for _, instanceID := range sortedIDs {
-		instance := instances[strconv.Itoa(instanceID)]
-		instance.ID = instanceID
-		sortedInstances = append(sortedInstances, instance)
-	}
-
-	return sortedInstances, response.Warnings, err
+	return returnedInstances, response.Warnings, err
 }
 
 func (client *Client) sortedInstanceKeys(instances map[string]ApplicationInstanceStatus) ([]int, error) {

@@ -46,23 +46,32 @@ var _ = Describe("Application Instance Actions", func() {
 		Context("when the application exists", func() {
 			BeforeEach(func() {
 				fakeCloudControllerClient.GetApplicationInstanceStatusesByApplicationReturns(
-					[]ccv2.ApplicationInstanceStatus{
-						{ID: 0},
-						{ID: 1},
+					map[int]ccv2.ApplicationInstanceStatus{
+						0: {ID: 0, CPU: 100},
+						1: {ID: 1, CPU: 200},
+					},
+					ccv2.Warnings{"instance-status-warning-1", "instance-status-warning-2"},
+					nil,
+				)
+
+				fakeCloudControllerClient.GetApplicationInstancesByApplicationReturns(
+					map[int]ccv2.ApplicationInstance{
+						0: {ID: 0, Details: "heyllo", Since: 1234},
+						1: {ID: 1, Details: "heyllo", Since: 1234},
 					},
 					ccv2.Warnings{"instance-warning-1", "instance-warning-2"},
 					nil,
 				)
 			})
 
-			It("returns the application and warnings", func() {
+			It("returns the application instances and warnings", func() {
 				instances, warnings, err := actor.GetApplicationInstancesByApplication("some-app-guid")
 				Expect(err).ToNot(HaveOccurred())
-				Expect(instances).To(Equal([]ApplicationInstance{
-					{ID: 0},
-					{ID: 1},
+				Expect(instances).To(ConsistOf([]ApplicationInstance{
+					{ID: 0, CPU: 100, Details: "heyllo", Since: 1234},
+					{ID: 1, CPU: 200, Details: "heyllo", Since: 1234},
 				}))
-				Expect(warnings).To(ConsistOf("instance-warning-1", "instance-warning-2"))
+				Expect(warnings).To(ConsistOf("instance-status-warning-1", "instance-status-warning-2", "instance-warning-1", "instance-warning-2"))
 
 				Expect(fakeCloudControllerClient.GetApplicationInstanceStatusesByApplicationCallCount()).To(Equal(1))
 				Expect(fakeCloudControllerClient.GetApplicationInstanceStatusesByApplicationArgsForCall(0)).To(Equal("some-app-guid"))

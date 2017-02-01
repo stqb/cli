@@ -42,9 +42,9 @@ var _ = Describe("Application Summary Actions", func() {
 				Context("when instance information is available", func() {
 					BeforeEach(func() {
 						fakeCloudControllerClient.GetApplicationInstanceStatusesByApplicationReturns(
-							[]ccv2.ApplicationInstanceStatus{
-								{ID: 0},
-								{ID: 1},
+							map[int]ccv2.ApplicationInstanceStatus{
+								0: {ID: 0},
+								1: {ID: 1},
 							},
 							ccv2.Warnings{"instance-warning"},
 							nil,
